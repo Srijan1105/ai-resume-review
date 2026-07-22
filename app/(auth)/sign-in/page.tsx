@@ -38,7 +38,7 @@ export default function SignInPage() {
         return
       }
 
-      router.push('/dashboard')
+      window.location.href = '/dashboard'
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred during sign in.')
     } finally {
