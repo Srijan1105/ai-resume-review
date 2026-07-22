@@ -93,14 +93,9 @@ export async function POST(req: NextRequest) {
   try {
     aiResult = await generateReview(resumeText, jobDescription);
   } catch (err) {
-    if (err instanceof AIServiceError) {
-      return NextResponse.json(
-        { error: "AI service unavailable. Please try again." },
-        { status: 502 }
-      );
-    }
+    const message = err instanceof Error ? err.message : "AI service unavailable. Please try again."
     return NextResponse.json(
-      { error: "AI service unavailable. Please try again." },
+      { error: message },
       { status: 502 }
     );
   }

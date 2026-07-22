@@ -53,8 +53,24 @@ CREATE TABLE public.daily_usage (
 );
 
 -- ------------------------------------------------------------
--- Row-Level Security
--- ------------------------------------------------------------
+-- public.users: users can read and write their own rows
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "users_select_own"
+  ON public.users
+  FOR SELECT
+  USING (id = auth.uid());
+
+CREATE POLICY "users_insert_own"
+  ON public.users
+  FOR INSERT
+  WITH CHECK (id = auth.uid());
+
+CREATE POLICY "users_update_own"
+  ON public.users
+  FOR UPDATE
+  USING (id = auth.uid())
+  WITH CHECK (id = auth.uid());
 
 -- reviews: users can only read and write their own rows
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
