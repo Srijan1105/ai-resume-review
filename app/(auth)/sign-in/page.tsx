@@ -19,16 +19,31 @@ export default function SignInPage() {
     setError(null)
     setLoading(true)
 
-    const supabase = createClient()
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+    try {
+      const supabase = createClient()
 
-    if (signInError) {
-      setError('Invalid email or password. Please try again.')
+      // Check if client is using placeholder URL
+      const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (!rawUrl || rawUrl.includes('placeholder') || !rawUrl.startsWith('http')) {
+        setError('Supabase environment variables are missing on Vercel. Please add NEXT_PUBLIC_SUPABASE_URL & NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel settings and redeploy.')
+        setLoading(false)
+        return
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+
+      if (signInError) {
+        setError(signInError.message || 'Invalid email or password. Please try again.')
+        setLoading(false)
+        return
+      }
+
+      router.push('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred during sign in.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    router.push('/dashboard')
   }
 
   return (

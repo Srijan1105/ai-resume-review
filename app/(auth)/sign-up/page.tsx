@@ -19,25 +19,40 @@ export default function SignUpPage() {
     setError(null)
     setLoading(true)
 
-    const supabase = createClient()
-    const { error: signUpError } = await supabase.auth.signUp({ email, password })
+    try {
+      const supabase = createClient()
 
-    if (signUpError) {
-      // Supabase returns "User already registered" when email is already in use
-      if (
-        signUpError.message.toLowerCase().includes('already registered') ||
-        signUpError.message.toLowerCase().includes('already in use') ||
-        signUpError.message.toLowerCase().includes('email address is already')
-      ) {
-        setError('An account with this email already exists. Please sign in instead.')
-      } else {
-        setError(signUpError.message)
+      // Check if client is using placeholder URL
+      const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (!rawUrl || rawUrl.includes('placeholder') || !rawUrl.startsWith('http')) {
+        setError('Supabase environment variables are missing on Vercel. Please add NEXT_PUBLIC_SUPABASE_URL & NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel settings and redeploy.')
+        setLoading(false)
+        return
       }
-      setLoading(false)
-      return
-    }
 
-    router.push('/dashboard')
+      const { error: signUpError } = await supabase.auth.signUp({ email, password })
+
+      if (signUpError) {
+        // Supabase returns "User already registered" when email is already in use
+        if (
+          signUpError.message.toLowerCase().includes('already registered') ||
+          signUpError.message.toLowerCase().includes('already in use') ||
+          signUpError.message.toLowerCase().includes('email address is already')
+        ) {
+          setError('An account with this email already exists. Please sign in instead.')
+        } else {
+          setError(signUpError.message)
+        }
+        setLoading(false)
+        return
+      }
+
+      router.push('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred during sign up.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
