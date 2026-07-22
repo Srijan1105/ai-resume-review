@@ -21,10 +21,13 @@ export const runtime = 'nodejs'
  * Supabase admin client — bypasses RLS for server-side writes.
  * Uses the service role key instead of the anon key.
  */
-const supabaseAdmin = createSupabaseAdmin(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith('http')
+    ? process.env.NEXT_PUBLIC_SUPABASE_URL
+    : 'https://placeholder.supabase.co'
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder'
+  return createSupabaseAdmin(url, key)
+}
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   // 1. Read raw body — must NOT use req.json() for signature verification
@@ -64,6 +67,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // 4. Route by event type
   try {
+    const supabaseAdmin = getSupabaseAdmin()
     switch (event.type) {
       case 'checkout.session.completed': {
         // Extract fields from the completed checkout session
