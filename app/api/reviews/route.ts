@@ -57,22 +57,12 @@ export async function POST(req: NextRequest) {
   const resumeText = stripHtml(parsed.data.resumeText);
   const jobDescription = stripHtml(parsed.data.jobDescription);
 
-  // 4. Load user record to obtain plan (auto-provision in public.users if missing)
-  let { data: userRecord } = await supabase
+  // 4. Load user record to obtain plan (default to starter if not found)
+  const { data: userRecord } = await supabase
     .from("users")
     .select("plan")
     .eq("id", user.id)
-    .maybeSingle();
-
-  if (!userRecord) {
-    const { data: newRecord } = await supabase
-      .from("users")
-      .upsert({ id: user.id, email: user.email ?? "", plan: "starter" }, { onConflict: "id" })
-      .select("plan")
-      .maybeSingle();
-
-    userRecord = newRecord ?? { plan: "starter" };
-  }
+    .single();
 
   const plan = (userRecord?.plan ?? "starter") as "starter" | "pro";
 

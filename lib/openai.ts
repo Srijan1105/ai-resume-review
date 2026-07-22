@@ -21,17 +21,27 @@ export class AIServiceError extends Error {
 // without a real key)
 // ---------------------------------------------------------------------------
 
-let _client: OpenAI | null = null
+let _clientInfo: { client: OpenAI; model: string } | null = null
 
-function getClient(): OpenAI {
-  if (!_client) {
-    const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) {
-      throw new AIServiceError('OPENAI_API_KEY environment variable is not set')
-    }
-    _client = new OpenAI({ apiKey })
+function getClient(): { client: OpenAI; model: string } {
+  const groqKey = process.env.GROQ_API_KEY
+  const openAIKey = process.env.OPENAI_API_KEY
+
+  if (groqKey || (openAIKey && openAIKey.startsWith('gsk_'))) {
+    const apiKey = groqKey || openAIKey
+    const client = new OpenAI({
+      apiKey,
+      baseURL: 'https://api.groq.com/openai/v1',
+    })
+    return { client, model: 'llama-3.3-70b-versatile' }
   }
-  return _client
+
+  if (!openAIKey) {
+    throw new AIServiceError('Neither OPENAI_API_KEY nor GROQ_API_KEY environment variable is set. Please set your API key in Vercel environment variables.')
+  }
+
+  const client = new OpenAI({ apiKey: openAIKey })
+  return { client, model: 'gpt-4o-mini' }
 }
 
 // ---------------------------------------------------------------------------
@@ -176,8 +186,9 @@ export async function generateReview(
   let rawContent: string | null
 
   try {
-    const completion = await getClient().chat.completions.create({
-      model: 'gpt-4o-mini',
+    const { client, model } = getClient()
+    const completion = await client.chat.completions.create({
+      model,
       messages,
       response_format: { type: 'json_object' },
     })
