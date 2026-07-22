@@ -57,18 +57,24 @@ export async function POST(req: NextRequest) {
   const resumeText = stripHtml(parsed.data.resumeText);
   const jobDescription = stripHtml(parsed.data.jobDescription);
 
-  // 4. Load user record to obtain plan
-  const { data: userRecord, error: userError } = await supabase
+  // 4. Load user record to obtain plan (auto-provision in public.users if missing)
+  let { data: userRecord } = await supabase
     .from("users")
     .select("plan")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (userError || !userRecord) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!userRecord) {
+    const { data: newRecord } = await supabase
+      .from("users")
+      .upsert({ id: user.id, email: user.email ?? "", plan: "starter" }, { onConflict: "id" })
+      .select("plan")
+      .maybeSingle();
+
+    userRecord = newRecord ?? { plan: "starter" };
   }
 
-  const plan = userRecord.plan as "starter" | "pro";
+  const plan = (userRecord?.plan ?? "starter") as "starter" | "pro";
 
   // 5. Rate limit check — Req 3.5
   const rateCheck = await checkRateLimit(supabase, user.id, plan);
