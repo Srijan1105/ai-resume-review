@@ -35,8 +35,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   if (error) {
     // Surface a friendly error rather than crash
     return (
-      <div className="mx-auto max-w-2xl">
-        <p className="text-sm text-red-600">Failed to load reviews. Please refresh the page.</p>
+      <div className="mx-auto max-w-2xl rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-sm font-medium text-red-800">Failed to load reviews: {error.message}</p>
+        <p className="mt-1 text-xs text-red-600">
+          If you haven&apos;t run the database setup yet, please execute the SQL script in <code className="font-mono bg-red-100 px-1 py-0.5 rounded">supabase/migrations/001_initial_schema.sql</code> inside your Supabase project&apos;s SQL Editor.
+        </p>
       </div>
     )
   }
